@@ -2,8 +2,12 @@ import React, { useEffect, useState } from "react";
 import styles from "../../styles/Auth.module.css";
 import { Link } from "react-router-dom";
 import { ROUTES } from "../../utils/routes";
+import { useDispatch } from "react-redux";
+import { createUser } from "../../features/user/userSlice";
 
 const SignUpForm = () => {
+  const dispatch = useDispatch();
+
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
@@ -49,7 +53,21 @@ const SignUpForm = () => {
       }));
       return;
     }
-    console.log("Форма отправлена:", formData);
+    const userData = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      avatar: "https://picsum.photos/800",
+    };
+
+    dispatch(createUser(userData))
+      .unwrap()
+      .then((response) => {
+        console.log("Успешная регистрация:", response);
+      })
+      .catch((error) => {
+        console.error("Ошибка регистрации:", error);
+      });
   };
 
   return (
