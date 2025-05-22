@@ -86,6 +86,10 @@
 .loginButton:hover {
   opacity: 0.7;
 }
+.loginButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
 
 .link {
   font-family: Montserrat;

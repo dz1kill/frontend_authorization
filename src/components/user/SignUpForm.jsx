@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "../../styles/Auth.module.css";
 import { Link } from "react-router-dom";
 import { ROUTES } from "../../utils/routes";
@@ -7,8 +7,22 @@ const SignUpForm = () => {
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
+    name: "",
+    email: "",
   });
-  const [passMatch, setMatch] = useState(true);
+  const [validate, setValidate] = useState({
+    passMatch: true,
+    isEmpty: true,
+  });
+
+  useEffect(() => {
+    const checkEmpty = Object.values(formData).some((val) => !val);
+    setValidate((prev) => ({
+      ...prev,
+      isEmpty: checkEmpty,
+    }));
+  }, [formData]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -19,11 +33,23 @@ const SignUpForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setMatch(true);
-    if (formData.password !== formData.confirmPassword) {
-      setFormData({ password: "", confirmPassword: "" });
-      setMatch(false);
+    const passwordsMatch =
+      formData.password === formData.confirmPassword;
+
+    setValidate({
+      ...validate,
+      passMatch: passwordsMatch,
+    });
+
+    if (!passwordsMatch) {
+      setFormData((prev) => ({
+        ...prev,
+        password: "",
+        confirmPassword: "",
+      }));
+      return;
     }
+    console.log("Форма отправлена:", formData);
   };
 
   return (
@@ -33,16 +59,28 @@ const SignUpForm = () => {
         <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
             <label>Имя</label>
-            <input placeholder="Введите ваше имя" />
+            <input
+              type="name"
+              name="name"
+              onChange={handleChange}
+              value={formData.name}
+              placeholder="Введите ваше имя"
+            />
           </div>
           <div className={styles.inputGroup}>
             <label>Почта</label>
-            <input type="text" placeholder="Введите ваш email" />
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Введите ваш email"
+            />
           </div>
 
           <div
             className={
-              passMatch ? styles.inputGroup : styles.errMatch
+              validate.passMatch ? styles.inputGroup : styles.errMatch
             }
           >
             <label>Пароль</label>
@@ -51,7 +89,9 @@ const SignUpForm = () => {
               id="password"
               name="password"
               placeholder={
-                passMatch ? "Ведите пароль" : "Пароли не совпадают"
+                validate.passMatch
+                  ? "Ведите пароль"
+                  : "Пароли не совпадают"
               }
               value={formData.password}
               onChange={handleChange}
@@ -60,7 +100,7 @@ const SignUpForm = () => {
 
           <div
             className={
-              passMatch ? styles.inputGroup : styles.errMatch
+              validate.passMatch ? styles.inputGroup : styles.errMatch
             }
           >
             <label>Подтвердите пароль</label>
@@ -69,7 +109,7 @@ const SignUpForm = () => {
               id="confirmPassword"
               name="confirmPassword"
               placeholder={
-                passMatch
+                validate.passMatch
                   ? "Подтвердите пароль"
                   : "Пароли не совпадают"
               }
@@ -78,7 +118,11 @@ const SignUpForm = () => {
             />
           </div>
 
-          <button className={styles.loginButton} type="submit">
+          <button
+            className={styles.loginButton}
+            disabled={validate.isEmpty}
+            type="submit"
+          >
             Зарегистрироваться
           </button>
           <Link to={`${ROUTES.LOGIN}`} className={styles.link}>
