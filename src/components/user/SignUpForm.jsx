@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import styles from "../../styles/Auth.module.css";
 import { ROUTES } from "../../utils/routes";
@@ -8,6 +8,7 @@ import { createUser } from "../../features/user/userSlice";
 
 const SignUpForm = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     password: "",
@@ -18,6 +19,8 @@ const SignUpForm = () => {
   const [validate, setValidate] = useState({
     passMatch: true,
     isEmpty: true,
+    isLoading: false,
+    isError: false,
   });
 
   useEffect(() => {
@@ -30,30 +33,15 @@ const SignUpForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const passwordsMatch =
-      formData.password === formData.confirmPassword;
 
-    setValidate({
-      ...validate,
-      passMatch: passwordsMatch,
-    });
-
-    if (!passwordsMatch) {
-      setFormData((prev) => ({
-        ...prev,
-        password: "",
-        confirmPassword: "",
-      }));
-      return;
-    }
     const userData = {
       name: formData.name,
       email: formData.email,
@@ -61,20 +49,56 @@ const SignUpForm = () => {
       avatar: "https://picsum.photos/800",
     };
 
-    dispatch(createUser(userData))
-      .unwrap()
-      .then((response) => {
-        console.log("Успешная регистрация:", response);
-      })
-      .catch((error) => {
-        console.error("Ошибка регистрации:", error);
-      });
+    const passwordsMatch =
+      formData.password === formData.confirmPassword;
+
+    if (!passwordsMatch) {
+      setValidate((prev) => ({
+        ...prev,
+        passMatch: passwordsMatch,
+      }));
+      setFormData((prev) => ({
+        ...prev,
+        password: "",
+        confirmPassword: "",
+      }));
+      return;
+    }
+
+    setValidate((prev) => ({
+      ...prev,
+      passMatch: true,
+      isLoading: true,
+    }));
+
+    const resData = await dispatch(createUser(userData));
+
+    if (resData.error) {
+      setValidate((prev) => ({
+        ...prev,
+        isLoading: false,
+        isError: true,
+      }));
+    } else {
+      navigate(ROUTES.LOGIN);
+    }
   };
 
   return (
     <div className={styles.page}>
+      {validate.isLoading && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.loadingSpinner}></div>
+        </div>
+      )}
       <div className={styles.board}>
-        <h1 className={styles.title}>Регистрация</h1>
+        <h1
+          className={
+            validate.isError ? styles.titleError : styles.title
+          }
+        >
+          {validate.isError ? "Ошибка регистрации" : "Регистрация"}
+        </h1>
         <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
             <label>Имя</label>
